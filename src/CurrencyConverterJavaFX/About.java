@@ -40,7 +40,7 @@ public class About {
         });
 
         Label label2 = new Label();
-        label2.setText("Creator: Eddi");
+        label2.setText("Creators: Eddi & Marco");
         Button closeButton = new Button("Close");
         closeButton.setOnAction(e -> window.close());
 
