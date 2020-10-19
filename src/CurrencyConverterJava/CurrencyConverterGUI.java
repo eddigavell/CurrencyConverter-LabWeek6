@@ -61,11 +61,27 @@ public class CurrencyConverterGUI extends JFrame{
         });
         fromTextField.addKeyListener(new KeyAdapter() {
             @Override
-            public void keyReleased(KeyEvent e) {
-                super.keyReleased(e);
+            public void keyPressed(KeyEvent e) {
+                super.keyPressed(e);
                 if(e.getKeyCode() == KeyEvent.VK_ENTER) {
                     // Enter was pressed. Your code goes here.
+                    String fromCurrency = "";
+                    String toCurrency = "";
+                    switch (fromCurrencyComboBox.getSelectedIndex()) {
+                        case 0 -> fromCurrency = "SEK";
+                        case 1 -> fromCurrency = "EUR";
+                        case 2 -> fromCurrency = "USD";
+                        case 3 -> fromCurrency = "JPY";
+                    }
+                    switch (toCurrencyComboBox.getSelectedIndex()) {
+                        case 0 -> toCurrency = "SEK";
+                        case 1 -> toCurrency = "EUR";
+                        case 2 -> toCurrency = "USD";
+                        case 3 -> toCurrency = "JPY";
+                    }
 
+
+                    printConvertedValueToTextField(fromCurrency, toCurrency);
                 }
             }
         });
@@ -115,7 +131,7 @@ public class CurrencyConverterGUI extends JFrame{
         rates.put("EURtoJPY", rateEURtoJPY); //Sets EURtoJPY to hashmap
         rates.put("EURtoUSD", rateEURtoUSD); //Sets eur->usd to hashmap
         rates.put("EURtoSEK", rateEURtoSEK); //Sets eur->sek to hashmap
-        rates.put("EURtoEUR", 1.0); //
+        rates.put("EURtoEUR", 1.0); //Sets eur->eur to hashmap
     }
 
     public static void main(String[] args) throws IOException {

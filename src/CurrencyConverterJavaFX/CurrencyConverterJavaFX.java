@@ -195,7 +195,7 @@ public class CurrencyConverterJavaFX extends Application {
 
         //Foreach loop that will get correct value depending on what we send into the method
         for (Map.Entry<String, Double> mapElement: rates.entrySet()) {
-            String s = mapElement.getKey().toString();
+            String s = mapElement.getKey();
             if (s.substring(5).contains(x)) {
                 a = (mapElement.getValue());
             }
