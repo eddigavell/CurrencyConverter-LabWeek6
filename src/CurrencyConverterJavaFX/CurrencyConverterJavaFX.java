@@ -1,5 +1,6 @@
 package CurrencyConverterJavaFX;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -11,6 +12,8 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
+import javafx.util.Duration;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -122,6 +125,7 @@ public class CurrencyConverterJavaFX extends Application {
         });
 
         menuMainExit.setOnAction(e -> System.exit(0));
+
         menuMainRates.setOnAction(e -> {
             // Rates scene when clicking button -------------------------------------------------------------------------------------
             window.setTitle("CC - Rates");
@@ -134,7 +138,9 @@ public class CurrencyConverterJavaFX extends Application {
             Scene sceneRates = new Scene(root, 280,200);
             window.setScene(sceneRates);
         });
+
         menuHelpAbout.setOnAction(e -> About.display(backgroundColorOfTheWindow));
+
         convertButton.setOnAction(e -> {
             if (checkWhatComesFromTextFieldToConvert(fromHowMuchToConvertTextField.getText())) {
                 double valueToConvert = Double.parseDouble(fromHowMuchToConvertTextField.getText());
@@ -144,15 +150,16 @@ public class CurrencyConverterJavaFX extends Application {
                 AlertBox.display("Error input", "Illegal input, please choose something else", backgroundColorOfTheWindow);
             }
         });
+
         fromHowMuchToConvertTextField.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ENTER) {
-                if (checkWhatComesFromTextFieldToConvert(fromHowMuchToConvertTextField.getText())) {
-                    double valueToConvert = Double.parseDouble(fromHowMuchToConvertTextField.getText());
-                    String s = calculate(valueToConvert, fromCurrencyComboBox.getValue(), toCurrencyComboBox.getValue());
-                    toHowMuchToConvertTextField.setText(s);
-                } else {
-                    AlertBox.display("Error input", "Illegal input, please choose something else", backgroundColorOfTheWindow);
-                }
+                convertButton.arm();
+                PauseTransition pause = new PauseTransition(Duration.seconds(0.1));
+                pause.setOnFinished(evt -> {
+                    convertButton.disarm();
+                    convertButton.fire();
+                });
+                pause.play();
             }
         });
         //---------------------------------------------------------------------------------------------------------------------------
