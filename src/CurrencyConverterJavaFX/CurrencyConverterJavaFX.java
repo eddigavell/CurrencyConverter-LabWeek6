@@ -234,6 +234,15 @@ public class CurrencyConverterJavaFX extends Application {
     }
 
     Boolean checkWhatComesFromTextFieldToConvert(String x) {
-        return !x.equals("") && Double.parseDouble(x) >= 0 && Double.parseDouble(x) <= Double.MAX_VALUE;
+        if (!x.isEmpty()) {
+            for(int i=0; i < x.length(); i++) {
+                if(!Character.isDigit(x.charAt(i))) {
+                    return false;
+                }
+            }
+            return  (Double.parseDouble(x) >= 0) || (Double.parseDouble(x) <= Double.MAX_VALUE);
+        } else {
+            return false;
+        }
     }
 }
