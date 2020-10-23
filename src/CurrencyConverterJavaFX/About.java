@@ -32,10 +32,8 @@ public class About {
         url.setOnAction(e -> {
             try {
                 Desktop.getDesktop().browse(new URI("https://api.exchangeratesapi.io/latest?symbols=JPY,USD,SEK"));
-            } catch (IOException ioException) {
+            } catch (IOException | URISyntaxException ioException) {
                 ioException.printStackTrace();
-            } catch (URISyntaxException uriSyntaxException) {
-                uriSyntaxException.printStackTrace();
             }
         });
 

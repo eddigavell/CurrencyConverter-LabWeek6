@@ -29,15 +29,8 @@ public class CurrencyConverterGUI extends JFrame{
 
         readFromInternetAndSetRates(); //initiate and sets Exhangerates
 
-        //Code below what happens if convertbutton is used.
         convertButton.addActionListener(e -> {
             //Kod som körs om man trycker på convertknappen.
-            /* Combo box index
-            index 0 = SEK
-            index 1 = EUR
-            index 2 = USD
-            index 3 = JPY
-            */
             String fromCurrency = "";
             String toCurrency = "";
             switch (fromCurrencyComboBox.getSelectedIndex()) {
@@ -52,26 +45,21 @@ public class CurrencyConverterGUI extends JFrame{
                 case 2 -> toCurrency = "USD";
                 case 3 -> toCurrency = "JPY";
             }
-
-
             if (checkWhatComesFromTextFieldToConvert(fromTextField.getText())) {
                 printConvertedValueToTextField(fromCurrency, toCurrency);
             } else {
                 JOptionPane.showMessageDialog(null, "Illegal input. Allowed input is only positive numbers");
             }
-
         });
     }
 
     Boolean checkWhatComesFromTextFieldToConvert(String x) {
-
         if (!x.isEmpty()) {
             for(int i=0; i < x.length(); i++) {
                 if(!Character.isDigit(x.charAt(i))) {
                     return false;
                 }
             }
-
             return  (Double.parseDouble(x) >= 0) || (Double.parseDouble(x) <= Double.MAX_VALUE);
         } else {
             return false;

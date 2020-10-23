@@ -2,6 +2,8 @@ package CurrencyConverterJavaFX;
 
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -13,7 +15,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -27,14 +28,22 @@ public class CurrencyConverterJavaFX extends Application {
     String backgroundColorOfTheWindow = "-fx-background-color: #C6EDFF";
     HashMap<String, Double> rates = new HashMap<>();
     String dateFromURL;
+    String homePageWeWannaReadFrom = "https://api.exchangeratesapi.io/latest?symbols=JPY,USD,SEK";
 
     public static void main(String[] args) {
         launch(args);
     }
 
     @Override
-    public void start(Stage window) throws Exception {
-        readFromInternet(); //Gets rates and sets them from internet
+    public void start(Stage window) {
+        try {
+            readFromInternet(homePageWeWannaReadFrom);
+        } catch (IOException ioException) {
+            AlertBox.display("Error - IOException", "The webpage cant be read", backgroundColorOfTheWindow);
+        } catch (NumberFormatException numberFormatException) {
+            AlertBox.display("Error - NumberFormatException", "The string cant be processed", backgroundColorOfTheWindow);
+        }
+
         window.setTitle("CC - Currency Converter"); //Title of the window
         //Menubar ------------------------------------------------------------------------------------------------------------------
         /* Create a new MenuBar. */
@@ -57,7 +66,6 @@ public class CurrencyConverterJavaFX extends Application {
         fromHowMuchToConvertTextField.setText("1");
         fromHowMuchToConvertTextField.setEditable(true);
         fromHowMuchToConvertTextField.setMaxWidth(Double.MAX_VALUE);
-
 
         ComboBox<String> fromCurrencyComboBox = new ComboBox<>();
         fromCurrencyComboBox.getItems().add("SEK");
@@ -90,7 +98,9 @@ public class CurrencyConverterJavaFX extends Application {
         dateTheRatesWasPickedUp.setText(dateFromURL);
         dateTheRatesWasPickedUp.setMaxWidth(80);
 
-        ListView ratesSortedToShow = sortRatesandDisplayThem(rates);
+        //Format hashmap to ListView to display it on rates scene ---------------------------------------------------------------
+        ObservableList<Object> ratesList = FXCollections.observableArrayList(hashmapToArrayListAndSorted(rates)); //Array list to observable list
+        ListView<Object> listToDisplayInLayout = new ListView<>(ratesList); //Observable list to listview only to display it on rates scene.
 
         //GridPane --------------------------------------------------------------------------------------------------------------
         GridPane gridPane = new GridPane(); //Creates a grid pane
@@ -130,7 +140,7 @@ public class CurrencyConverterJavaFX extends Application {
             // Rates scene when clicking button -------------------------------------------------------------------------------------
             window.setTitle("CC - Rates");
             VBox ratesLayout = new VBox();
-            ratesLayout.getChildren().add(ratesSortedToShow);
+            ratesLayout.getChildren().add(listToDisplayInLayout);
 
             BorderPane root = new BorderPane();
             root.setTop(menu);
@@ -144,8 +154,7 @@ public class CurrencyConverterJavaFX extends Application {
         convertButton.setOnAction(e -> {
             if (checkWhatComesFromTextFieldToConvert(fromHowMuchToConvertTextField.getText())) {
                 double valueToConvert = Double.parseDouble(fromHowMuchToConvertTextField.getText());
-                String s = calculate(valueToConvert, fromCurrencyComboBox.getValue(), toCurrencyComboBox.getValue());
-                toHowMuchToConvertTextField.setText(s);
+                toHowMuchToConvertTextField.setText(getRatesAndCalculate(valueToConvert, fromCurrencyComboBox.getValue(), toCurrencyComboBox.getValue()));
             } else {
                 AlertBox.display("Error input", "Illegal input, please choose something else", backgroundColorOfTheWindow);
             }
@@ -176,27 +185,66 @@ public class CurrencyConverterJavaFX extends Application {
         window.show();
     }
 
-    void readFromInternet() throws IOException {
+    void readFromInternet(String homePageWeWannaReadFrom) throws IOException, NumberFormatException {
         String lineFromUrlWithRates = "";
-        URL urlForHomepageWeWannaRead = new URL("https://api.exchangeratesapi.io/latest?symbols=JPY,USD,SEK"); //Sets the url we want to read from
-        HttpURLConnection urlConnection = (HttpURLConnection) urlForHomepageWeWannaRead.openConnection(); //Creates connection to the URL.
+        URL urlForHomePageWeWannaRead = new URL(homePageWeWannaReadFrom);
+        HttpURLConnection urlConnection = (HttpURLConnection) urlForHomePageWeWannaRead.openConnection(); //Creates connection to the URL.
         urlConnection.setRequestMethod("GET"); //Sets that we want to GET data from the site.
-        InputStream in = urlForHomepageWeWannaRead.openStream(); //Creates InputStream from url
+        InputStream in = urlForHomePageWeWannaRead.openStream(); //Creates InputStream from url
         Scanner sc = new Scanner(in); //Read the line.
         while(sc.hasNextLine()) {
             lineFromUrlWithRates = sc.nextLine();
         }
         sc.close();
-
         String s = lineFromUrlWithRates;
-        dateFromURL = s.substring(s.indexOf("date")+7, s.lastIndexOf("}")-1); //Adds date from the url feed to string.
-        rates.put("EURtoJPY", Double.parseDouble(s.substring(s.indexOf("JPY")+5, s.indexOf(",")))); //Trims and sets EURtoJPY to hashmap
-        rates.put("EURtoUSD", Double.parseDouble(s.substring(s.indexOf("USD")+5, s.indexOf("USD")+5+6))); //Trims and sets eur->usd to hashmap
-        rates.put("EURtoSEK", Double.parseDouble(s.substring(s.indexOf("SEK")+5, s.indexOf("SEK")+5+6))); //Trims and sets eur->sek to hashmap
-        rates.put("EURtoEUR", 1.0); //
+
+        setRatesFromString(s);
     }
 
-    String calculate(double valueToConvert,String x, String y) {
+    void setRatesFromString(String s) {
+        /* LETS CHOP THE STRING UP ----------------------------------------------------------------------------------------  */
+        String[] ratesDoubles = new String[4];
+        boolean run = false;
+        String target= "";
+        String temp = "";
+        int k = 0;
+
+        for (int i = 0; i<s.length(); i++) {
+            temp += s.charAt(i);
+            if (temp.contains("JPY") || temp.contains("SEK") || temp.contains("USD")) {
+                i += 2;
+                run = true;
+                temp = "";
+            } else if (temp.contains("date")) {
+                i += 3;
+                run = true;
+                temp = "";
+            } else if (s.charAt(i) == ',' || s.charAt(i) == '}' && s.charAt(i + 1) == ',') {
+                if (!target.isEmpty() || !target.equals("")) {
+                    ratesDoubles[k] = target;
+                    temp = "";
+                    target = "";
+                    k++;
+                    run = false;
+                }
+            } else if (s.charAt(i) == '"' && s.charAt(i+1) == '}')  {
+                if (!target.isEmpty() || !target.equals("")) {
+                    ratesDoubles[k] = target;
+                    break;
+                }
+            } else if (run){
+                target += s.charAt(i);
+            }
+
+        }
+        rates.put("EURtoJPY", Double.parseDouble(ratesDoubles[0]));
+        rates.put("EURtoSEK", Double.parseDouble(ratesDoubles[1]));
+        rates.put("EURtoUSD", Double.parseDouble(ratesDoubles[2]));
+        rates.put("EURtoEUR", 1.0);
+        dateFromURL = ratesDoubles[3];
+    }
+
+    String getRatesAndCalculate(double valueToConvert,String x, String y) {
         double a = 0;
         double b = 0;
 
@@ -206,7 +254,7 @@ public class CurrencyConverterJavaFX extends Application {
             if (s.substring(5).contains(x)) {
                 a = (mapElement.getValue());
             }
-            if (s.substring(5).contains(y)){
+            if (s.substring(5).contains(y)) {
                 b = (mapElement.getValue());
             }
         }
@@ -215,34 +263,32 @@ public class CurrencyConverterJavaFX extends Application {
             a = 1;
             b = 1;
         }
-
         double calculatedConvertedValue = (valueToConvert * ((1 / a) * b)); // The calculated value after conversion of currencies
+
         BigDecimal toCurrencyTextField = BigDecimal.valueOf(calculatedConvertedValue).setScale(2, RoundingMode.FLOOR); //Converts to BigDecimal just to get only 2 decimals (google uses it so why not us to?)
-        return toCurrencyTextField.toString(); //Writes text to TextPane to show
+        return toCurrencyTextField.toString(); //Return the calculatedValue as a string
     }
 
-    ListView sortRatesandDisplayThem(HashMap<String, Double> ratesToSort ) {
-        ListView listViewWithSortedRates = new ListView();
-
-        List<Map.Entry> result = ratesToSort.entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByValue())
-                .collect(Collectors.toList());
-
-        listViewWithSortedRates.getItems().addAll(result);
-        return listViewWithSortedRates;
+    ArrayList<Object> hashmapToArrayListAndSorted(HashMap<String, Double> ratesToSort) {
+        return ratesToSort.entrySet()
+                            .stream()
+                                .sorted(Map.Entry.comparingByValue()).collect(Collectors.toCollection(ArrayList::new));
     }
 
     Boolean checkWhatComesFromTextFieldToConvert(String x) {
-        if (!x.isEmpty()) {
+        if (x == null || x.isEmpty()) {
+            return false;
+        } else {
             for(int i=0; i < x.length(); i++) {
                 if(!Character.isDigit(x.charAt(i))) {
                     return false;
                 }
             }
             return  (Double.parseDouble(x) >= 0) || (Double.parseDouble(x) <= Double.MAX_VALUE);
-        } else {
-            return false;
         }
+    }
+
+    HashMap<String, Double> getRatesHashMap() {
+        return rates;
     }
 }
