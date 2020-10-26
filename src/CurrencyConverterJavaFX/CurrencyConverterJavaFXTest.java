@@ -44,18 +44,18 @@ public class CurrencyConverterJavaFXTest {
 
         //Test 1 (100eur to sek)
         BigDecimal targetValue1 = BigDecimal.valueOf(valueToConvert * (1/EURtoEUR) * EURtoSEK).setScale(2, RoundingMode.FLOOR);
-        Assertions.assertEquals(targetValue1.toString(), currencyConverterJavaFX.getRatesAndCalculate(valueToConvert, "EUR", "SEK"));
+        Assertions.assertEquals(targetValue1.toString(), currencyConverterJavaFX.calculateConvertedValue(valueToConvert, "EUR", "SEK"));
 
         //Test 2 (100sek to eur)
         BigDecimal targetValue2 = BigDecimal.valueOf(valueToConvert * (1/EURtoSEK) * EURtoEUR).setScale(2, RoundingMode.FLOOR);
-        Assertions.assertEquals(targetValue2.toString(), currencyConverterJavaFX.getRatesAndCalculate(valueToConvert, "SEK", "EUR"));
+        Assertions.assertEquals(targetValue2.toString(), currencyConverterJavaFX.calculateConvertedValue(valueToConvert, "SEK", "EUR"));
 
         //Test 3 (100usd to jpy)
         BigDecimal targetValue3 = BigDecimal.valueOf(valueToConvert * (1/EURtoUSD) * EURtoJPY).setScale(2, RoundingMode.FLOOR);
-        Assertions.assertEquals(targetValue3.toString(), currencyConverterJavaFX.getRatesAndCalculate(valueToConvert, "USD", "JPY"));
+        Assertions.assertEquals(targetValue3.toString(), currencyConverterJavaFX.calculateConvertedValue(valueToConvert, "USD", "JPY"));
 
         //Test 4 special case for SEK to SEK due to rounding problem...
-        Assertions.assertEquals("1.00", currencyConverterJavaFX.getRatesAndCalculate(1, "SEK", "SEK"));
+        Assertions.assertEquals("1.00", currencyConverterJavaFX.calculateConvertedValue(1, "SEK", "SEK"));
     }
 
     @Test

@@ -27,8 +27,9 @@ import java.util.stream.Collectors;
 public class CurrencyConverterJavaFX extends Application {
     String backgroundColorOfTheWindow = "-fx-background-color: #C6EDFF";
     HashMap<String, Double> rates = new HashMap<>();
-    String dateFromURL;
-    String homePageWeWannaReadFrom = "https://api.exchangeratesapi.io/latest?symbols=JPY,USD,SEK";
+    String contentFromWebpage;
+    String dateFromStringFromWebpage;
+    String webpageWeWannaReadFrom = "https://api.exchangeratesapi.io/latest?symbols=JPY,USD,SEK";
 
     public static void main(String[] args) {
         launch(args);
@@ -37,7 +38,8 @@ public class CurrencyConverterJavaFX extends Application {
     @Override
     public void start(Stage window) {
         try {
-            readFromInternet(homePageWeWannaReadFrom);
+            contentFromWebpage = readFromInternet(webpageWeWannaReadFrom);
+            setRatesFromString(contentFromWebpage);
         } catch (IOException ioException) {
             AlertBox.display("Error - IOException", "The webpage cant be read", backgroundColorOfTheWindow);
         } catch (NumberFormatException numberFormatException) {
@@ -95,7 +97,7 @@ public class CurrencyConverterJavaFX extends Application {
 
         TextField dateTheRatesWasPickedUp = new TextField();
         dateTheRatesWasPickedUp.setEditable(false);
-        dateTheRatesWasPickedUp.setText(dateFromURL);
+        dateTheRatesWasPickedUp.setText(dateFromStringFromWebpage);
         dateTheRatesWasPickedUp.setMaxWidth(80);
 
         //Format hashmap to ListView to display it on rates scene ---------------------------------------------------------------
@@ -154,7 +156,7 @@ public class CurrencyConverterJavaFX extends Application {
         convertButton.setOnAction(e -> {
             if (checkWhatComesFromTextFieldToConvert(fromHowMuchToConvertTextField.getText())) {
                 double valueToConvert = Double.parseDouble(fromHowMuchToConvertTextField.getText());
-                toHowMuchToConvertTextField.setText(getRatesAndCalculate(valueToConvert, fromCurrencyComboBox.getValue(), toCurrencyComboBox.getValue()));
+                toHowMuchToConvertTextField.setText(calculateConvertedValue(valueToConvert, fromCurrencyComboBox.getValue(), toCurrencyComboBox.getValue()));
             } else {
                 AlertBox.display("Error input", "Illegal input, please choose something else", backgroundColorOfTheWindow);
             }
@@ -185,23 +187,31 @@ public class CurrencyConverterJavaFX extends Application {
         window.show();
     }
 
-    void readFromInternet(String homePageWeWannaReadFrom) throws IOException, NumberFormatException {
-        String lineFromUrlWithRates = "";
+    /**
+     * Reads from a given webpage and returns a string with the content
+     * @param homePageWeWannaReadFrom url for the webpage we want to read
+     * @return returns a String that contains the content from Webpage.
+     * @throws IOException throws IOException if the webpage couldn't be read.
+     */
+    public String readFromInternet(String homePageWeWannaReadFrom) throws IOException {
+        String contentFromWebpage = "";
         URL urlForHomePageWeWannaRead = new URL(homePageWeWannaReadFrom);
         HttpURLConnection urlConnection = (HttpURLConnection) urlForHomePageWeWannaRead.openConnection(); //Creates connection to the URL.
         urlConnection.setRequestMethod("GET"); //Sets that we want to GET data from the site.
         InputStream in = urlForHomePageWeWannaRead.openStream(); //Creates InputStream from url
         Scanner sc = new Scanner(in); //Read the line.
         while(sc.hasNextLine()) {
-            lineFromUrlWithRates = sc.nextLine();
+            contentFromWebpage = sc.nextLine();
         }
         sc.close();
-        String s = lineFromUrlWithRates;
-
-        setRatesFromString(s);
+        return contentFromWebpage;
     }
 
-    void setRatesFromString(String s) {
+    /**
+     * Takes string from readFromInternet method to sort and adds the rates to a given Hashmap (rates)
+     * @param input string to try and isolate rates
+     */
+    private void setRatesFromString(String input) {
         /* LETS CHOP THE STRING UP ----------------------------------------------------------------------------------------  */
         String[] ratesDoubles = new String[4];
         boolean run = false;
@@ -209,8 +219,8 @@ public class CurrencyConverterJavaFX extends Application {
         String temp = "";
         int k = 0;
 
-        for (int i = 0; i<s.length(); i++) {
-            temp += s.charAt(i);
+        for (int i = 0; i<input.length(); i++) {
+            temp += input.charAt(i);
             if (temp.contains("JPY") || temp.contains("SEK") || temp.contains("USD")) {
                 i += 2;
                 run = true;
@@ -219,7 +229,7 @@ public class CurrencyConverterJavaFX extends Application {
                 i += 3;
                 run = true;
                 temp = "";
-            } else if (s.charAt(i) == ',' || s.charAt(i) == '}' && s.charAt(i + 1) == ',') {
+            } else if (input.charAt(i) == ',' || input.charAt(i) == '}' && input.charAt(i + 1) == ',') {
                 if (!target.isEmpty() || !target.equals("")) {
                     ratesDoubles[k] = target;
                     temp = "";
@@ -227,13 +237,13 @@ public class CurrencyConverterJavaFX extends Application {
                     k++;
                     run = false;
                 }
-            } else if (s.charAt(i) == '"' && s.charAt(i+1) == '}')  {
+            } else if (input.charAt(i) == '"' && input.charAt(i+1) == '}')  {
                 if (!target.isEmpty() || !target.equals("")) {
                     ratesDoubles[k] = target;
                     break;
                 }
             } else if (run){
-                target += s.charAt(i);
+                target += input.charAt(i);
             }
 
         }
@@ -241,54 +251,75 @@ public class CurrencyConverterJavaFX extends Application {
         rates.put("EURtoSEK", Double.parseDouble(ratesDoubles[1]));
         rates.put("EURtoUSD", Double.parseDouble(ratesDoubles[2]));
         rates.put("EURtoEUR", 1.0);
-        dateFromURL = ratesDoubles[3];
+        dateFromStringFromWebpage = ratesDoubles[3];
     }
 
-    String getRatesAndCalculate(double valueToConvert,String x, String y) {
+    /**
+     * Takes inputs and returns a converted value based on rates from hashmap.
+     * @param valueToConvert input value how much to convert of fromCurrency -> toCurrency.
+     * @param fromCurrency From currency as String ("SEK", "USD", "JPY", "EUR").
+     * @param toCurrency To currency as String ("SEK", "USD", "JPY", "EUR").
+     * @return converted value as String
+     */
+    String calculateConvertedValue(double valueToConvert, String fromCurrency, String toCurrency) {
         double a = 0;
         double b = 0;
 
         //Foreach loop that will get correct value depending on what we send into the method
         for (Map.Entry<String, Double> mapElement: rates.entrySet()) {
             String s = mapElement.getKey();
-            if (s.substring(5).contains(x)) {
+            if (s.substring(5).contains(fromCurrency)) {
                 a = (mapElement.getValue());
             }
-            if (s.substring(5).contains(y)) {
+            if (s.substring(5).contains(toCurrency)) {
                 b = (mapElement.getValue());
             }
         }
 
-        if (x.equals("SEK") && y.equals("SEK")) { //Some rounding problem when 1SEK -> 1 SEK... shows 0.9999... only on SEK...
+        if (fromCurrency.equals("SEK") && toCurrency.equals("SEK")) { //Some rounding problem when 1SEK -> 1 SEK... shows 0.9999... only on SEK...
             a = 1;
             b = 1;
         }
         double calculatedConvertedValue = (valueToConvert * ((1 / a) * b)); // The calculated value after conversion of currencies
 
-        BigDecimal toCurrencyTextField = BigDecimal.valueOf(calculatedConvertedValue).setScale(2, RoundingMode.FLOOR); //Converts to BigDecimal just to get only 2 decimals (google uses it so why not us to?)
-        return toCurrencyTextField.toString(); //Return the calculatedValue as a string
+        BigDecimal convertedAndRoundedValue = BigDecimal.valueOf(calculatedConvertedValue).setScale(2, RoundingMode.FLOOR); //Converts to BigDecimal just to get only 2 decimals (google uses it so why not us to?)
+        return convertedAndRoundedValue.toString(); //Return the calculatedValue as a string
     }
 
-    ArrayList<Object> hashmapToArrayListAndSorted(HashMap<String, Double> ratesToSort) {
+    /**
+     * Takes a hashmap and converts it to Arraylist that is sorted based on smallest to highest.
+     * @param ratesToSort Hashmap to sort
+     * @return arraylist that is sorted
+     */
+    public ArrayList<Object> hashmapToArrayListAndSorted(HashMap<String, Double> ratesToSort) {
         return ratesToSort.entrySet()
                             .stream()
                                 .sorted(Map.Entry.comparingByValue()).collect(Collectors.toCollection(ArrayList::new));
     }
 
-    Boolean checkWhatComesFromTextFieldToConvert(String x) {
-        if (x == null || x.isEmpty()) {
+    /**
+     * Takes input from textfield and checks what is given as input, returns true or false depending if legit input.
+     * @param input input from textfield as String.
+     * @return true/false based on input to method
+     */
+    public Boolean checkWhatComesFromTextFieldToConvert(String input) {
+        if (input == null || input.isEmpty()) {
             return false;
         } else {
-            for(int i=0; i < x.length(); i++) {
-                if(!Character.isDigit(x.charAt(i))) {
+            for(int i=0; i < input.length(); i++) {
+                if(!Character.isDigit(input.charAt(i))) {
                     return false;
                 }
             }
-            return  (Double.parseDouble(x) >= 0) || (Double.parseDouble(x) <= Double.MAX_VALUE);
+            return  (Double.parseDouble(input) >= 0) || (Double.parseDouble(input) <= Double.MAX_VALUE);
         }
     }
 
-    HashMap<String, Double> getRatesHashMap() {
+    /**
+     * getFunction for get the hashmap with rates.
+     * @return hashmap with rates
+     */
+    public HashMap<String, Double> getRatesHashMap() {
         return rates;
     }
 }
