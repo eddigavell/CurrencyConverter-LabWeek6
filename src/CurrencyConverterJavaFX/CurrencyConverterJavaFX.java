@@ -316,10 +316,12 @@ public class CurrencyConverterJavaFX extends Application {
     }
 
     /**
-     * getFunction for get the hashmap with rates.
+     * Returns a HashMap with rates for test purposes (Uses readfrominternet method and setRatesFromString method).
      * @return hashmap with rates
      */
-    public HashMap<String, Double> getRatesHashMap() {
+    public HashMap<String, Double> readAndSetRatesForTest() throws IOException {
+        String test = readFromInternet(webpageWeWannaReadFrom);
+        setRatesFromString(test);
         return rates;
     }
 }

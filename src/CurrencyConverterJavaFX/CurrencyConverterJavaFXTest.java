@@ -3,6 +3,8 @@ package CurrencyConverterJavaFX;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -31,11 +33,10 @@ public class CurrencyConverterJavaFXTest {
     }
 
     @Test
-    @DisplayName("Test that the conversion is right")
-    void TestMathForConversion() {
-        TestReadFromInternetMethod(); //Read from internet to get the rates.
-        HashMap<String, Double> rates = currencyConverterJavaFX.getRatesHashMap(); //Take in the hashmap with rates
-
+    @DisplayName("Test that the conversion math is right")
+    void TestMathForConversion() throws IOException {
+        CurrencyConverterJavaFX test = new CurrencyConverterJavaFX();
+        HashMap<String, Double> rates = test.readAndSetRatesForTest();
         double EURtoJPY = rates.get("EURtoJPY"); //Takes from hashmap and puts into doubles
         double EURtoSEK = rates.get("EURtoSEK");
         double EURtoUSD = rates.get("EURtoUSD");
@@ -44,18 +45,18 @@ public class CurrencyConverterJavaFXTest {
 
         //Test 1 (100eur to sek)
         BigDecimal targetValue1 = BigDecimal.valueOf(valueToConvert * (1/EURtoEUR) * EURtoSEK).setScale(2, RoundingMode.FLOOR);
-        Assertions.assertEquals(targetValue1.toString(), currencyConverterJavaFX.calculateConvertedValue(valueToConvert, "EUR", "SEK"));
+        Assertions.assertEquals(targetValue1.toString(), test.calculateConvertedValue(valueToConvert, "EUR", "SEK"));
 
         //Test 2 (100sek to eur)
         BigDecimal targetValue2 = BigDecimal.valueOf(valueToConvert * (1/EURtoSEK) * EURtoEUR).setScale(2, RoundingMode.FLOOR);
-        Assertions.assertEquals(targetValue2.toString(), currencyConverterJavaFX.calculateConvertedValue(valueToConvert, "SEK", "EUR"));
+        Assertions.assertEquals(targetValue2.toString(), test.calculateConvertedValue(valueToConvert, "SEK", "EUR"));
 
         //Test 3 (100usd to jpy)
         BigDecimal targetValue3 = BigDecimal.valueOf(valueToConvert * (1/EURtoUSD) * EURtoJPY).setScale(2, RoundingMode.FLOOR);
-        Assertions.assertEquals(targetValue3.toString(), currencyConverterJavaFX.calculateConvertedValue(valueToConvert, "USD", "JPY"));
+        Assertions.assertEquals(targetValue3.toString(), test.calculateConvertedValue(valueToConvert, "USD", "JPY"));
 
         //Test 4 special case for SEK to SEK due to rounding problem...
-        Assertions.assertEquals("1.00", currencyConverterJavaFX.calculateConvertedValue(1, "SEK", "SEK"));
+        Assertions.assertEquals("1.00", test.calculateConvertedValue(1, "SEK", "SEK"));
     }
 
     @Test
